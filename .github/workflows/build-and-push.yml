@@ -1,0 +1,19 @@
+# Archivo: .github/workflows/build-and-push.yml (Personal)
+name: Build and Push Docker Image - Personal
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Build and Push Personal Service
+        uses: lusalvi/nuvexa-frontend/build-push-microservice@main
+        with:
+          service-name: 'personal'
+          docker-registry: 'lusalvi'
