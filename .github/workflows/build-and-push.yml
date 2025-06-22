@@ -8,8 +8,21 @@ on:
       - 'prod-*'
 
 jobs:
-  deploy:
+  extract-env:
     runs-on: ubuntu-latest
+    outputs:
+      environment: ${{ steps.set_env.outputs.env }}
+    steps:
+      - name: Extract environment from tag
+        id: set_env
+        run: |
+          ENVIRONMENT=$(echo "${GITHUB_REF_NAME}" | cut -d'-' -f1)
+          echo "env=$ENVIRONMENT" >> $GITHUB_OUTPUT
+
+  deploy:
+    needs: extract-env
+    runs-on: ubuntu-latest
+    environment: ${{ needs.extract-env.outputs.environment }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -20,18 +33,11 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Extract environment from tag
-        id: extract
-        run: |
-          TAG_NAME=${GITHUB_REF##*/}
-          echo "tag=$TAG_NAME" >> $GITHUB_OUTPUT
-          echo "environment=$(echo $TAG_NAME | cut -d'-' -f1)" >> $GITHUB_OUTPUT
-
       - name: Build and Push Docker Image
         uses: docker/build-push-action@v5
         with:
           context: .
           push: true
           tags: |
-                  lusalvi/personal:${{ steps.extract_env.outputs.tag }}
-                  lusalvi/personal:${{ steps.extract_env.outputs.env }}
+            lusalvi/personal:${{ github.ref_name }}
+            lusalvi/personal:${{ needs.extract-env.outputs.environment }}
