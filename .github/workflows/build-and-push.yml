@@ -1,31 +1,18 @@
-name: Build and Push Docker Image - Personal
+name: Deploy to Environment - Personal
 
 on:
-  workflow_dispatch:
-    inputs:
-      environment:
-        description: 'Deploy environment'
-        required: true
-        default: 'dev'
-        type: choice
-        options:
-          - dev
-          - test
-          - prod
+  push:
+    tags:
+      - 'dev-*'
+      - 'test-*'
+      - 'prod-*'
 
 jobs:
-  build:
+  deploy:
     runs-on: ubuntu-latest
-    env:
-      IMAGE_NAME: lusalvi/personal
-      ENVIRONMENT: ${{ github.event.inputs.environment }}
-
     steps:
-      - name: Checkout
+      - name: Checkout code
         uses: actions/checkout@v4
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
 
       - name: Log in to Docker Hub
         uses: docker/login-action@v3
@@ -33,20 +20,15 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Docker metadata
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.IMAGE_NAME }}
-          tags: |
-            type=raw,value=${{ env.ENVIRONMENT }}
-            type=sha
+      - name: Extract environment from tag
+        id: extract_env
+        run: echo "env=${GITHUB_REF##/}" | sed 's/-.//' >> $GITHUB_OUTPUT
 
-      - name: Build and push
+      - name: Build and Push Docker Image
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: ./Dockerfile
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          tags: |
+            lusalvi/personal:${{ github.ref_name }}
+            lusalvi/personal:${{ steps.extract_env.outputs.env }}
