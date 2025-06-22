@@ -21,8 +21,11 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Extract environment from tag
-        id: extract_env
-        run: echo "env=${GITHUB_REF##/}" | sed 's/-.//' >> $GITHUB_OUTPUT
+        id: extract
+        run: |
+          TAG_NAME=${GITHUB_REF##*/}
+          echo "tag=$TAG_NAME" >> $GITHUB_OUTPUT
+          echo "environment=$(echo $TAG_NAME | cut -d'-' -f1)" >> $GITHUB_OUTPUT
 
       - name: Build and Push Docker Image
         uses: docker/build-push-action@v5
@@ -30,5 +33,5 @@ jobs:
           context: .
           push: true
           tags: |
-            lusalvi/personal:${{ github.ref_name }}
-            lusalvi/personal:${{ steps.extract_env.outputs.env }}
+                  lusalvi/personal:${{ steps.extract_env.outputs.tag }}
+                  lusalvi/personal:${{ steps.extract_env.outputs.env }}
