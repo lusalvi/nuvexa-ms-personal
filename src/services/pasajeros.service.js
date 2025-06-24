@@ -4,7 +4,7 @@ const prefix = process.env.SUPABASE_PREFIX || '';
 async function obtenerPasajeros() {
   const { data, error } = await supabase
     .from(`${prefix}pasajeros`)
-    .select('*');
+    .select('*, vehiculo(patente)');
 
   if (error) throw new Error(error.message);
   return data;
